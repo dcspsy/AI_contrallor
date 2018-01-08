@@ -3,6 +3,7 @@ import numpy as np
 from sklearn.utils import shuffle
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
 
 
 flow_data = np.load('data/flow_data')
