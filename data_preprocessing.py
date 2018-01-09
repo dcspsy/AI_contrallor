@@ -1,4 +1,3 @@
-# -*- coding:utf-8 -*-
 import numpy as np
 from sklearn.utils import shuffle
 from sklearn.preprocessing import MinMaxScaler
@@ -15,14 +14,14 @@ stage_next_data = np.load('data/stage_next_data')
 status_next_data = np.load('data/status_next_data')
 reward_next_data = np.load('data/reward_next_data')
 action_data = np.load('data/action_data')
-# action_data = np.round(action_data/20)  # 调整动作空间 shape(1482, 4)->(259, 4)
+# action_data = np.round(action_data/20)  # change action space's shape(1482, 4)->(259, 4)
 
 
 def n_times_data(data, n=5):    # more data
-    '''
+    """
     used for 2-D data
     for 1-D data add <data = data.reashape(-1,1)> at begining
-    '''
+    """
     size = data.shape
     data_augmented = data
     for num in range(n-1):
@@ -47,8 +46,9 @@ y = y_scale.transform(y)
 
 clf = PCA(6)
 X = clf.fit_transform(X)
-
+# --------------------
 actions = np.unique(action_data, axis=0)
+actions = actions[np.abs(np.sum(actions, axis=1)) < 100]  # remove actions change too much
 
 
 def delay(s):
@@ -64,7 +64,9 @@ def delay(s):
     return delay_time
 
 
-min_delay = np.percentile(delay(status_data), 30, axis=0)  # row 1 has negtive number
+min_delay = np.percentile(delay(status_data), 30, axis=0)  # row 1 has negative number
+min_stage = np.min(stage_data, axis=0)
+max_stage = np.max(stage_data, axis=0)
 
 
 def reward(delay_data):
@@ -84,6 +86,10 @@ def max_reward_action(status):
     for stat in status:
         temp = np.tile(stat, actions.shape[0]).reshape((actions.shape[0], stat.shape[0]))
         temp[:, -4:] = temp[:, -4:] + actions
+        temp = temp[(temp[:, -4:] >= min_stage).all(axis=1)]  # remove too little stage_value
+        temp = temp[(temp[:, -4:] <= max_stage).all(axis=1)]  # remove too large stage_value
+        temp = temp[np.sum(temp[:, -4:], axis=1) > 300]  # remove too little cycle_value
+        temp = temp[np.sum(temp[:, -4:], axis=1) < 420]  # remove too little cycle_value
         R = reward(delay(temp))
         best_action[num] = actions[R.argmax()]
         best_reward[num] = R.max()
