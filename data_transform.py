@@ -74,7 +74,7 @@ for row in range(time_index.shape[0] - 1):
     stage_data[row, 2] = stage_data_read[time_stage & (stage_data_read.stage_no == 3)].value.sum()
     stage_data[row, 3] = stage_data_read[time_stage & (stage_data_read.stage_no == 4)].value.sum()
 
-stats_data = np.concatenate((flow_data, stage_data), axis=1)
+status_data = np.concatenate((flow_data, stage_data), axis=1)
 
 
 def reward(s):
@@ -90,7 +90,7 @@ flow_next_data = np.zeros((time_index.shape[0]-1, 32))
 
 stage_next_data[:-1] = stage_data[1:]
 flow_next_data[:-1] = flow_data[1:]
-stats_next_data = np.concatenate((flow_next_data, stage_next_data), axis=1)
+status_next_data = np.concatenate((flow_next_data, stage_next_data), axis=1)
 
 action_data = stage_next_data - stage_data
 
@@ -104,25 +104,25 @@ def drop_rows(data):  # drop error data
 
 flow_data = drop_rows(flow_data)
 stage_data = drop_rows(stage_data)
-stats_data = drop_rows(stats_data)
-reward_data = reward(stats_data)
+status_data = drop_rows(status_data)
+reward_data = reward(status_data)
 
 flow_next_data = drop_rows(flow_next_data)
 stage_next_data = drop_rows(stage_next_data)
-stats_next_data = drop_rows(stats_next_data)
-reward_next_data = reward(stats_next_data)
+status_next_data = drop_rows(status_next_data)
+reward_next_data = reward(status_next_data)
 
 action_data = drop_rows(action_data)
 
 
 flow_data.dump('./data/flow_data')
 stage_data.dump('./data/stage_data')
-stats_data.dump('./data/stats_data')
+status_data.dump('./data/status_data')
 reward_data.dump('./data/reward_data')
 
 flow_next_data.dump('./data/flow_next_data')
 stage_next_data.dump('./data/stage_next_data')
-stats_next_data.dump('./data/stats_next_data')
+status_next_data.dump('./data/status_next_data')
 reward_next_data.dump('./data/reward_next_data')
 
 action_data.dump('./data/action_data')

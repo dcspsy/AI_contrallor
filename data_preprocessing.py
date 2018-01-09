@@ -8,11 +8,11 @@ import matplotlib.pyplot as plt
 
 flow_data = np.load('data/flow_data')
 stage_data = np.load('data/stage_data')
-stats_data = np.load('data/stats_data')
+status_data = np.load('data/status_data')
 reward_data = np.load('data/reward_data')
 flow_next_data = np.load('data/flow_next_data')
 stage_next_data = np.load('data/stage_next_data')
-stats_next_data = np.load('data/stats_next_data')
+status_next_data = np.load('data/status_next_data')
 reward_next_data = np.load('data/reward_next_data')
 action_data = np.load('data/action_data')
 # action_data = np.round(action_data/20)  # 调整动作空间 shape(1482, 4)->(259, 4)
@@ -32,7 +32,7 @@ def n_times_data(data, n=5):    # more data
     return data_augmented
 
 
-X = np.concatenate((stats_data, stage_data), axis=1)
+X = np.concatenate((status_data, stage_data), axis=1)
 X = shuffle(n_times_data(X), random_state=0)  # shuffle
 y = shuffle(n_times_data(action_data), random_state=0)
 
@@ -64,7 +64,7 @@ def delay(s):
     return delay_time
 
 
-min_delay = np.percentile(delay(stats_data), 30, axis=0)  # row 1 has negtive number
+min_delay = np.percentile(delay(status_data), 30, axis=0)  # row 1 has negtive number
 
 
 def reward(delay_data):
@@ -77,11 +77,11 @@ def reward(delay_data):
     return 1/(1+np.e**x)
 
 
-def max_reward_action(stats):
-    best_action = np.zeros((stats.shape[0], 4))
-    best_reward = np.zeros((stats.shape[0], 1))
+def max_reward_action(status):
+    best_action = np.zeros((status.shape[0], 4))
+    best_reward = np.zeros((status.shape[0], 1))
     num = 0
-    for stat in stats:
+    for stat in status:
         temp = np.tile(stat, actions.shape[0]).reshape((actions.shape[0], stat.shape[0]))
         temp[:, -4:] = temp[:, -4:] + actions
         R = reward(delay(temp))
@@ -91,8 +91,8 @@ def max_reward_action(stats):
     return best_action, best_reward
 
 
-r_target = reward(delay(stats_data))
-a, r_eval = max_reward_action(stats_data)
+r_target = reward(delay(status_data))
+a, r_eval = max_reward_action(status_data)
 plt.plot(r_target[:128])
 plt.plot(r_eval[:128])
 plt.show()

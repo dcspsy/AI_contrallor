@@ -68,12 +68,12 @@ plt.plot(target_test.data.numpy()[500:600, 3])
 plt.show()
 
 
-def eval_action_value(stats):
+def eval_action_value(status):
     """
-    regression action values by stats,with DNN(36,36,1)
+    regression action values by status,with DNN(36,36,1)
     """
-    stats = Variable(torch.Tensor(stats))
-    value = model(stats)
+    status = Variable(torch.Tensor(status))
+    value = model(status)
     value = value.data.numpy()
     if value.ndim == 1:
         value = data_preprocessing.y_scale.inverse_transform(value.reshape(1, 4))
@@ -92,12 +92,12 @@ def y_inverse_transform(data_y):
     return value
 
 
-def eval_action_value(stats):
+def eval_action_value(status):
     """
-    regression action values by stats,with DNN(36,36,1)
+    regression action values by status,with DNN(36,36,1)
     """
-    stats = Variable(torch.Tensor(stats))
-    value = model(stats)
+    status = Variable(torch.Tensor(status))
+    value = model(status)
     value = value.data.numpy()
     value = y_inverse_transform(value)
 
