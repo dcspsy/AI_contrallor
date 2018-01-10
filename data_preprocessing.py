@@ -89,9 +89,9 @@ def max_reward_action(status):
         temp = temp[(temp[:, -4:] >= min_stage).all(axis=1)]  # remove too little stage_value
         temp = temp[(temp[:, -4:] <= max_stage).all(axis=1)]  # remove too large stage_value
         temp = temp[np.sum(temp[:, -4:], axis=1) > 300]  # remove too little cycle_value
-        temp = temp[np.sum(temp[:, -4:], axis=1) < 420]  # remove too little cycle_value
+        temp = temp[np.sum(temp[:, -4:], axis=1) < 420]  # remove too large cycle_value
         R = reward(delay(temp))
-        best_action[num] = actions[R.argmax()]
+        best_action[num] = temp[R.argmax(), -4:] - stat[-4:]
         best_reward[num] = R.max()
         num += 1
     return best_action, best_reward
@@ -101,4 +101,8 @@ r_target = reward(delay(status_data))
 a, r_eval = max_reward_action(status_data)
 plt.plot(r_target[:128])
 plt.plot(r_eval[:128])
+plt.show()
+plt.figure()
+plt.plot(np.sum((a+stage_data)[:128], axis=1), 'r')
+plt.plot(np.sum(stage_data[:128], axis=1), 'b')
 plt.show()
