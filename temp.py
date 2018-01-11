@@ -6,7 +6,7 @@ np.seterr(divide='ignore', invalid='ignore')
 # read data from csv
 date_parser = lambda x: pd.datetime.strptime(x, '%Y/%m/%d %H:%M')
 parse_dates = ['curr_time']
-flow_data_read = pd.read_csv('/media/root/PSY/PSY/flow_origin.csv', encoding='gb2312', header=0,
+flow_data_read = pd.read_csv('data/flow_origin.csv', encoding='gb2312', header=0,
                              date_parser=date_parser, parse_dates=parse_dates)
 stage_data_read = pd.read_csv('/media/root/PSY/PSY/STAGE_TRAIN.csv', encoding='gb2312', date_parser=date_parser,
                               parse_dates=['阶段开始时刻']).values[:, [1, 3, 4]]
