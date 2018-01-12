@@ -6,7 +6,7 @@ np.seterr(divide='ignore', invalid='ignore')
 # read data from csv
 date_parser = lambda x: pd.datetime.strptime(x, '%Y-%m-%d %H:%M:%S')
 parse_dates = ['curr_time']
-flow_data_read = pd.read_csv('./data/flow_origin_data.csv', encoding='gb2312', header=0,
+flow_data_read = pd.read_csv('./origin_data/flow_origin_data.csv', encoding='gb2312', header=0,
                              date_parser=date_parser, parse_dates=parse_dates)
 
 flows_index = [u'north_north_flow', u'west_north_flow', u'south_north_flow', u'east_north_flow',
