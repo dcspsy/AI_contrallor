@@ -6,14 +6,15 @@ np.seterr(divide='ignore', invalid='ignore')
 # read data from csv
 date_parser = lambda x: pd.datetime.strptime(x, '%Y-%m-%d %H:%M:%S')
 parse_dates = ['curr_time']
-flow_data_read = pd.read_csv('AI_contrallor/origin_data/flow_origin_data.csv', encoding='gb2312', header=0,
+flow_data_read = pd.read_csv('origin_data/flow_origin_data.csv', encoding='gb2312', header=0,
                              date_parser=date_parser, parse_dates=parse_dates)
 
 flows_index = [u'north_north_flow', u'west_north_flow', u'south_north_flow', u'east_north_flow',
                u'north_west_flow', u'west_west_flow', u'south_west_flow', u'east_west_flow',
                u'north_south_flow', u'west_south_flow', u'south_south_flow', u'east_south_flow',
                u'north_east_flow', u'west_east_flow', u'south_east_flow', u'east_east_flow']
-cross_index = [u'华池街-苏州大道东']
+cross_index = [u'观枫街-苏州大道东', u'华池街-旺墩路', u'星湖街-苏州大道东', u'华池街-苏州大道东', u'华池街-现代大道',
+               u'观枫街-现代大道']
 flow_map = {
         'north': {'input': flows_index[8:12], 'output': [flows_index[i] for i in [0, 4, 8, 12]]},
         'west': {'input': flows_index[12:16], 'output': [flows_index[i] for i in [1, 5, 9, 13]]},
@@ -22,7 +23,18 @@ flow_map = {
             }
 cross_map = {
     u'华池街-苏州大道东': {
-        'north': u'华池街-现代大道', 'west': u'苏州大道东-月廊街', 'south': u'华池街-旺墩路', 'east': u'星湖街-苏州大道东'}}
+        'north': u'华池街-现代大道', 'west': u'苏州大道东-月廊街', 'south': u'华池街-旺墩路', 'east': u'星湖街-苏州大道东'},
+    u'观枫街-现代大道': {
+        'north': None, 'west': None, 'south': u'观枫街-苏州大道东', 'east': u'华池街-现代大道'},
+    u'华池街-现代大道': {
+        'north': None, 'west': u'观枫街-现代大道', 'south': u'华池街-苏州大道东', 'east': None},
+    u'观枫街-苏州大道东': {
+        'north': u'观枫街-现代大道', 'west': None, 'south': None, 'east': u'华池街-苏州大道东'},
+    u'华池街-旺墩路': {
+        'north': u'华池街-苏州大道东', 'west': None, 'south': None, 'east': None},
+    u'星湖街-苏州大道东': {
+        'north': None, 'west': u'华池街-苏州大道东', 'south': None, 'east': None}
+}
 
 
 stage_map = {
@@ -31,57 +43,44 @@ stage_map = {
         '4': [3, 4, 9, 14, 0, 12, 10, 6]}}
 
 
-def split_by_date(data, time_col='curr_time'):
-    """
-    :return: dict of each date data. key is time_col value's date
-    """
-    data_date = data[time_col].apply(lambda x: x.date())
-    date_index = data_date.unique()
+# set cross_name, date,time into index
 
-    return {index: data[data_date == index] for index in date_index}
+flow_data_read['date'] = flow_data_read['curr_time'].apply(lambda x: x.date())
 
 
-# data_by_date = split_by_date(flow_data_read)
+date_time= flow_data_read[['date', 'curr_time']].drop_duplicates(['curr_time'])
+date_index = flow_data_read['date'].unique()
+time_index = flow_data_read['curr_time'].unique()
+flow_data = np.zeros(36)
 
-def transform_flow_data(data_all, time_col='curr_time', cross_index=cross_index):
-    date_cross_flow = {}
-    for date in data_all.keys():
-        data = data_all[date]
-        time_index = data[time_col].unique()
-        flow = np.zeros((time_index.shape[0] - 1, 32))
+for cross in range(len(cross_index)):
+    cross_flow_data = np.zeros((len(time_index), 36))
+    cross_flow_data[:, 0] = cross
+    cross_flow_data[:, 1] = np.arange(time_index.shape[0])
+    cross_flow_data[:, 2] = date_time['date'].map(dict(zip(date_index, range(len(date_index)))))
+    if cross_map[cross_index[cross]]['north'] is not None:
+        cross_flow_data[:, 3:7] = flow_data_read[flow_data_read['cross_name'] == cross_map[cross_index[cross]]['north']][flow_map['north']['input']]
+    if cross_map[cross_index[cross]]['west'] is not None:
+        cross_flow_data[:, 7:11] = flow_data_read[flow_data_read['cross_name'] == cross_map[cross_index[cross]]['west']][flow_map['west']['input']]
+    if cross_map[cross_index[cross]]['south'] is not None:
+        cross_flow_data[:, 11:15] = flow_data_read[flow_data_read['cross_name'] == cross_map[cross_index[cross]]['south']][flow_map['south']['input']]
+    if cross_map[cross_index[cross]]['east'] is not None:
+        cross_flow_data[:, 15:19] = flow_data_read[flow_data_read['cross_name'] == cross_map[cross_index[cross]]['east']][flow_map['east']['input']]
 
-        cross_flow = {}
-        for cross in cross_index:
-            for row in range(time_index.shape[0]-1):
-                time = (data.curr_time >= time_index[row]) & (data.curr_time < time_index[row+1])
-                is_cross = data.cross_name == cross_map[cross]['north']
-                flow[row, :4] = data[time & is_cross][flow_map['north']['input']]
-                is_cross = data.cross_name == cross_map[cross]['west']
-                flow[row, 4:8] = data[time & is_cross][flow_map['west']['input']]
-                is_cross = data.cross_name == cross_map[cross]['south']
-                flow[row, 8:12] = data[time & is_cross][flow_map['south']['input']]
-                is_cross = data.cross_name == cross_map[cross]['east']
-                flow[row, 12:16] = data[time & is_cross][flow_map['east']['input']]
-                is_cross = data.cross_name == cross
-                flow[row, 16:20] = data[time & is_cross][flow_map['north']['output']]
-                is_cross = data.cross_name == cross
-                flow[row, 20:24] = data[time & is_cross][flow_map['west']['output']]
-                is_cross = data.cross_name == cross
-                flow[row, 24:28] = data[time & is_cross][flow_map['south']['output']]
-                is_cross = data.cross_name == cross
-                flow[row, 28:32] = data[time & is_cross][flow_map['east']['output']]
+    cross_flow_data[:, 19:23] = flow_data_read[flow_data_read['cross_name'] == cross_index[cross]][flow_map['north']['output']]
+    cross_flow_data[:, 23:27] = flow_data_read[flow_data_read['cross_name'] == cross_index[cross]][flow_map['west']['output']]
+    cross_flow_data[:, 27:31] = flow_data_read[flow_data_read['cross_name'] == cross_index[cross]][flow_map['south']['output']]
+    cross_flow_data[:, 31:35] = flow_data_read[flow_data_read['cross_name'] == cross_index[cross]][flow_map['east']['output']]
 
-                cross_flow[cross] = flow
+    flow_data = np.row_stack((flow_data, cross_flow_data))
 
-        date_cross_flow[date] = cross_flow
-    return date_cross_flow
+flow_data = flow_data[1:]
 
-
-flow_data = transform_flow_data(split_by_date(flow_data_read))
 # stage_data = np.zeros((time_index.shape[0]-1, 4))
 
 
-
+stage_data_read=None
+stage_data = None
 for row in range(time_index.shape[0] - 1):
     time_stage = (stage_data_read.curr_time >= time_index[row]) & (stage_data_read.curr_time < time_index[row+1])
 
@@ -142,3 +141,8 @@ status_next_data.dump('./data/status_next_data')
 reward_next_data.dump('./data/reward_next_data')
 
 action_data.dump('./data/action_data')
+
+
+
+
+
