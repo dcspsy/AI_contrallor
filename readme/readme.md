@@ -18,3 +18,4 @@ def reward(delay_data):
 动作选取
 次第计算stage前后两天的差作为可能出现的动作库 actions. stage_ = stage + action 作为相位配时的优化方案.reward最大的action 并返回动作和奖励值.(此处未限制最大周期,最小周期的大小)
 
+test
