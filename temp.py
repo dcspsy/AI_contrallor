@@ -79,7 +79,11 @@ flow_data = flow_data[1:]
 # stage_data = np.zeros((time_index.shape[0]-1, 4))
 
 
-stage_data_read=None
+stage_data_read = pd.read_csv('origin_data/stage_origin_data.csv',
+                              encoding='gb2312', date_parser=date_parser, parse_dates=['STAGE_START_TM'],
+                              usecols=['ROAD_NAME', 'STAGE_START_TM', 'STAGE_SEQ', 'STAGE_NAME', 'STAGE_SECONDS'])
+
+
 stage_data = None
 for row in range(time_index.shape[0] - 1):
     time_stage = (stage_data_read.curr_time >= time_index[row]) & (stage_data_read.curr_time < time_index[row+1])
@@ -90,8 +94,11 @@ for row in range(time_index.shape[0] - 1):
     stage_data[row, 3] = stage_data_read[time_stage & (stage_data_read.stage_no == 4)].value.sum()
 
 status_data = np.concatenate((flow_data, stage_data), axis=1)
+stage_data_read['date'] = stage_data_read['STAGE_START_TM'].apply(lambda x: x.date())
 
-
+stage_data_read = stage_data_read[stage_data_read['STAGE_START_TM'].apply(lambda x: x.hour).between(6, 23)]
+stage_data_read['time'] = pd.cut(stage_data_read['STAGE_START_TM'], time_index, labels=range(1, len(time_index)))
+# stage_data_read.groupby(['time'])['STAGE_SECONDS'].sum()
 def reward(s):
     r = sum((s[:, 1+16], s[:, 6+16], s[:, 7+16], s[:, 11+16], s[:, 12+16], s[:, 13+16]))/s[:, 32] + \
     sum((s[:, 1+16], s[:, 4+16], s[:, 5+16], s[:, 6+16], s[:, 11+16], s[:, 12+16], s[:, 14+16], s[:, 15+16]))/s[:, 33]+\
