@@ -40,8 +40,43 @@ cross_map = {
 stage_map = {
     u'华池街-苏州大道东': {
         '1': [3, 4, 9, 14, 7, 13], '2': [3, 4, 9, 14, 1, 11, 5, 15], '3': [3, 4, 9, 14, 2, 8],
-        '4': [3, 4, 9, 14, 0, 12, 10, 6]}}
+        '4': [3, 4, 9, 14, 0, 12, 10, 6]},
+    u'观枫街-现代大道': {
 
+    }
+}
+"""
+0       苏州大道东-观枫街         2       东西左转
+1       苏州大道东-观枫街         3       南北放行
+2       苏州大道东-观枫街         1       东西直行
+3       苏州大道东-华池街         1       东西直行
+4       苏州大道东-华池街         2       东西左转
+5       苏州大道东-华池街         3       南北直行
+6       苏州大道东-华池街         4       南北左转
+7       星湖街-苏州大道东         1       东西放行
+8       星湖街-苏州大道东         3       南北直行
+9       星湖街-苏州大道东         4       南北左转
+10        旺墩路-华池街         4       南北左转
+11        旺墩路-华池街         5       东西放行
+12        旺墩路-华池街         3       南北直行
+13       现代大道-华池街         2       东西左转
+14       现代大道-华池街         3       南北直行
+15       现代大道-华池街         4       南北左转
+16       现代大道-华池街         1       东西直行
+30       现代大道-观枫街         1       东西直行
+31       现代大道-观枫街         2       东西左转
+32       现代大道-观枫街         6        南放行
+4462    星湖街-苏州大道东         5        东放行
+4463    星湖街-苏州大道东         9        NaN
+4464    星湖街-苏州大道东         6        西放行
+5785     现代大道-华池街         8        北放行
+12244    现代大道-华池街         7        南放行
+147354  苏州大道东-观枫街         5        东放行
+147475   现代大道-华池街         6        西放行
+391739  苏州大道东-华池街         8        北放行
+391792    旺墩路-华池街         8        北放行
+391816  苏州大道东-华池街         7        南放行
+640750    旺墩路-华池街       255        NaN"""
 
 # set cross_name, date,time into index
 
@@ -51,10 +86,10 @@ flow_data_read['date'] = flow_data_read['curr_time'].apply(lambda x: x.date())
 date_time = flow_data_read[['date', 'curr_time']].drop_duplicates(['curr_time'])
 date_index = flow_data_read['date'].unique()
 time_index = flow_data_read['curr_time'].unique()
-flow_data = np.zeros(36)
+flow_data = np.zeros(35)
 
 for cross in range(len(cross_index)):
-    cross_flow_data = np.zeros((len(time_index), 36))
+    cross_flow_data = np.zeros((len(time_index), 35))
     cross_flow_data[:, 0] = cross
     cross_flow_data[:, 1] = np.arange(time_index.shape[0])
     cross_flow_data[:, 2] = date_time['date'].map(dict(zip(date_index, range(len(date_index)))))
@@ -75,6 +110,39 @@ for cross in range(len(cross_index)):
     flow_data = np.row_stack((flow_data, cross_flow_data))
 
 flow_data = flow_data[1:]
+"""
+----index
+0-2:flow_data columns cross_index,time_index,date_index,
+----input
+3-6:north_south_flow,west_south_flow,south_south_flow,east_south_flow
+7-10:north_east_flow,west_east_flow,south_east_flow,east_east_flow
+11-14:north_north_flow,west_north_flow,south_north_flow,east_north_flow
+15-18:north_west_flow, west_west_flow, south_west_flow, east_west_flow
+----output
+19-22:north_north_flow,north_west_flow,north_south_flow,north_east_flow
+23-26:west_north_flow,west_west_flow,west_south_flow,west_east_flow
+27-30:south_north_flow,south_west_flow,south_south_flow,south_east_flow
+31-34:east_north_flow,east_west_flow,east_south_flow,east_east_flow
+
+"""
+stage_map = {
+    u'华池街-苏州大道东': {
+        1: [20, 25, 30, 31, 26, 32], 2: [20, 25, 30, 31, 23, 24, 33, 34], 3: [20, 25, 30, 31, 21, 27],
+        4: [20, 25, 30, 31, 22, 19, 28, 29], 7: [20, 25, 30, 31, 27, 28, 29], 8: [20, 25, 30, 31, 19, 21, 22]},
+    u'观枫街-现代大道': {
+        1: [20, 25, 30, 31, 26, 32], 2: [20, 25, 30, 31, 23, 24, 33, 34], 6: [20, 25, 30, 31, 27, 28, 29]},
+    u'华池街-现代大道': {
+        1: [20, 25, 30, 31, 26, 32], 2: [20, 25, 30, 31, 23, 24, 33, 34], 3: [20, 25, 30, 31, 21, 27],
+        4: [20, 25, 30, 31, 22, 19, 28, 29], 7: [20, 25, 30, 31, 27, 28, 29], 8: [20, 25, 30, 31, 19, 21, 22]},
+    u'观枫街-苏州大道东': {
+        1: [20, 25, 30, 31, 26, 32], 2: [20, 25, 30, 31, 23, 24, 33, 34], 5: [20, 25, 30, 31, 32, 33, 34]},
+    u'华池街-旺墩路': {
+        3: [20, 25, 30, 31, 21, 27], 4: [20, 25, 30, 31, 22, 19, 28, 29],
+        5: [20, 25, 30, 31, 32, 33, 34, 27, 28, 29], 8: [20, 25, 30, 31, 19, 21, 22]},
+    u'星湖街-苏州大道东':{
+        1: [20, 25, 30, 31, 32, 33, 34, 27, 28, 29], 3: [20, 25, 30, 31, 21, 27],
+        4: [20, 25, 30, 31, 22, 19, 28, 29], 5: [20, 25, 30, 31, 32, 33, 34], 6: [20, 25, 30, 31, 27, 28, 29]}
+}
 
 
 # collect stage data by flowdata's time index
@@ -106,15 +174,16 @@ for cross in range(len(cross_index)):
     stage_data = np.row_stack((stage_data, cross_stage_data))
 
 stage_data = stage_data[1:]
+stage_data = stage_data[:, :-2]
 
 
 
-def reward(s):
-    r = sum((s[:, 1+16], s[:, 6+16], s[:, 7+16], s[:, 11+16], s[:, 12+16], s[:, 13+16]))/s[:, 32] + \
-    sum((s[:, 1+16], s[:, 4+16], s[:, 5+16], s[:, 6+16], s[:, 11+16], s[:, 12+16], s[:, 14+16], s[:, 15+16]))/s[:, 33]+\
-    sum((s[:, 1+16], s[:, 2+16], s[:, 6+16], s[:, 8+16], s[:, 11+16], s[:, 12+16])) / s[:,34] + \
-    sum((s[:, 0+16], s[:, 1+16], s[:, 3+16], s[:, 6+16], s[:, 9+16], s[:, 10+16], s[:, 11+16], s[:, 12+16])) / s[:, 35]
-    return r
+# def reward(s):
+#     r = sum((s[:, 1+16], s[:, 6+16], s[:, 7+16], s[:, 11+16], s[:, 12+16], s[:, 13+16]))/s[:, 32] + \
+#     sum((s[:, 1+16], s[:, 4+16], s[:, 5+16], s[:, 6+16], s[:, 11+16], s[:, 12+16], s[:, 14+16], s[:, 15+16]))/s[:, 33]+\
+#     sum((s[:, 1+16], s[:, 2+16], s[:, 6+16], s[:, 8+16], s[:, 11+16], s[:, 12+16])) / s[:, 34] + \
+#     sum((s[:, 0+16], s[:, 1+16], s[:, 3+16], s[:, 6+16], s[:, 9+16], s[:, 10+16], s[:, 11+16], s[:, 12+16])) / s[:, 35]
+#     return r
 
 
 stage_next_data = np.zeros((time_index.shape[0]-1, 4))
