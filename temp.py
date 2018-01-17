@@ -48,7 +48,7 @@ stage_map = {
 flow_data_read['date'] = flow_data_read['curr_time'].apply(lambda x: x.date())
 
 
-date_time= flow_data_read[['date', 'curr_time']].drop_duplicates(['curr_time'])
+date_time = flow_data_read[['date', 'curr_time']].drop_duplicates(['curr_time'])
 date_index = flow_data_read['date'].unique()
 time_index = flow_data_read['curr_time'].unique()
 flow_data = np.zeros(36)
@@ -80,8 +80,38 @@ flow_data = flow_data[1:]
 
 
 stage_data_read = pd.read_csv('origin_data/stage_origin_data.csv',
-                              encoding='gb2312', date_parser=date_parser, parse_dates=['STAGE_START_TM'],
-                              usecols=['ROAD_NAME', 'STAGE_START_TM', 'STAGE_SEQ', 'STAGE_NAME', 'STAGE_SECONDS'])
+                              encoding='gb2312', date_parser=date_parser, parse_dates=['STAGE_START_TM'])
+stage_data_read = stage_data_read[['ROAD_NAME', 'STAGE_START_TM', 'STAGE_SN', 'STAGE_SECONDS']]
+stage_data_read.columns = ['cross_name', 'stage_time', 'stage_sn', 'val']
+
+# encoding
+# stage_data_read['date'] = stage_data_read['stage_time'].apply(lambda x: x.date())
+# stage_data_read['date'] = stage_data_read['date'].replace(dict(zip(date_index, range(len(date_index)))))
+stage_data_read['stage_time'] = pd.cut(stage_data_read['stage_time'], time_index, labels=range(1, len(time_index))).values
+fix_cross_name = dict(zip([u'苏州大道东-观枫街', u'苏州大道东-华池街', u'星湖街-苏州大道东',u'旺墩路-华池街', u'现代大道-华池街', u'现代大道-观枫街'],
+                          [0, 3, 2, 1, 4, 5]))
+
+stage_data_read['cross_name'] = stage_data_read['cross_name'].replace(fix_cross_name)
+
+# collect
+stage_data_read = pd.pivot_table(stage_data_read, index=['cross_name', 'stage_time'], columns=['stage_sn'], values=['val'],
+                            aggfunc=[np.sum], fill_value=0)
+
+# merge
+stage_data = np.zeros(13)
+for cross in range(len(cross_index)):
+    cross_stage_data = np.zeros((len(time_index), 13))
+    cross_stage_data[:, 0] = cross
+    cross_stage_data[:, 1] = np.arange(time_index.shape[0])
+    cross_stage_data[:, 2] = date_time['date'].map(dict(zip(date_index, range(len(date_index)))))
+    cross_stage_data[1:, 3:] = stage_data_read.loc[cross, :]
+    stage_data = np.row_stack((stage_data, cross_stage_data))
+
+stage_data = stage_data[1:]
+
+
+
+
 
 
 stage_data = None
@@ -94,11 +124,9 @@ for row in range(time_index.shape[0] - 1):
     stage_data[row, 3] = stage_data_read[time_stage & (stage_data_read.stage_no == 4)].value.sum()
 
 status_data = np.concatenate((flow_data, stage_data), axis=1)
-stage_data_read['date'] = stage_data_read['STAGE_START_TM'].apply(lambda x: x.date())
 
-stage_data_read = stage_data_read[stage_data_read['STAGE_START_TM'].apply(lambda x: x.hour).between(6, 23)]
-stage_data_read['time'] = pd.cut(stage_data_read['STAGE_START_TM'], time_index, labels=range(1, len(time_index)))
-# stage_data_read.groupby(['time'])['STAGE_SECONDS'].sum()
+
+
 def reward(s):
     r = sum((s[:, 1+16], s[:, 6+16], s[:, 7+16], s[:, 11+16], s[:, 12+16], s[:, 13+16]))/s[:, 32] + \
     sum((s[:, 1+16], s[:, 4+16], s[:, 5+16], s[:, 6+16], s[:, 11+16], s[:, 12+16], s[:, 14+16], s[:, 15+16]))/s[:, 33]+\

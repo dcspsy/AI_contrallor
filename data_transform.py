@@ -1,32 +1,20 @@
 # -*- coding:utf-8 -*-
 import numpy as np
-
 import pandas as pd
-
 
 np.seterr(divide='ignore', invalid='ignore')
 # read data from csv
-date_parser = lambda x: pd.datetime.strptime(x, '%Y/%m/%d %H:%M')
+date_parser = lambda x: pd.datetime.strptime(x, '%Y-%m-%d %H:%M:%S')
 parse_dates = ['curr_time']
-flow_data_read = pd.read_csv('/Users/pansmac/Desktop/ali/flow_origin.csv', encoding='gb2312', header=0,
+flow_data_read = pd.read_csv('origin_data/flow_origin_data.csv', encoding='gb2312', header=0,
                              date_parser=date_parser, parse_dates=parse_dates)
-stage_data_read = pd.read_csv('/Users/pansmac/Desktop/ali/stage_origin.csv', date_parser=date_parser,
-                              parse_dates=['阶段开始时刻']).values[:, [1, 3, 4]]
 
-stage_data_read = pd.DataFrame(stage_data_read)
-stage_data_read.columns = ['stage_no', 'value', 'curr_time']
-'''
-1	东西直行
-2	东西左转
-3	南北直行
-4	南北左转
-'''
-# transform flows into inputs or outputs
 flows_index = [u'north_north_flow', u'west_north_flow', u'south_north_flow', u'east_north_flow',
                u'north_west_flow', u'west_west_flow', u'south_west_flow', u'east_west_flow',
                u'north_south_flow', u'west_south_flow', u'south_south_flow', u'east_south_flow',
                u'north_east_flow', u'west_east_flow', u'south_east_flow', u'east_east_flow']
-cross_index = list(flow_data_read.cross_name.unique())
+cross_index = [u'观枫街-苏州大道东', u'华池街-旺墩路', u'星湖街-苏州大道东', u'华池街-苏州大道东', u'华池街-现代大道',
+               u'观枫街-现代大道']
 flow_map = {
         'north': {'input': flows_index[8:12], 'output': [flows_index[i] for i in [0, 4, 8, 12]]},
         'west': {'input': flows_index[12:16], 'output': [flows_index[i] for i in [1, 5, 9, 13]]},
@@ -35,20 +23,35 @@ flow_map = {
             }
 cross_map = {
     u'华池街-苏州大道东': {
-        'north': u'华池街-现代大道', 'west': u'苏州大道东-月廊街', 'south': u'华池街-旺墩路', 'east': u'星湖街-苏州大道东'}}
+        'north': u'华池街-现代大道', 'west': u'苏州大道东-月廊街', 'south': u'华池街-旺墩路', 'east': u'星湖街-苏州大道东'},
+    u'观枫街-现代大道': {
+        'north': None, 'west': None, 'south': u'观枫街-苏州大道东', 'east': u'华池街-现代大道'},
+    u'华池街-现代大道': {
+        'north': None, 'west': u'观枫街-现代大道', 'south': u'华池街-苏州大道东', 'east': None},
+    u'观枫街-苏州大道东': {
+        'north': u'观枫街-现代大道', 'west': None, 'south': None, 'east': u'华池街-苏州大道东'},
+    u'华池街-旺墩路': {
+        'north': u'华池街-苏州大道东', 'west': None, 'south': None, 'east': None},
+    u'星湖街-苏州大道东': {
+        'north': None, 'west': u'华池街-苏州大道东', 'south': None, 'east': None}
+}
+
 
 stage_map = {
-    '1': [3, 4, 9, 14, 7, 13], '2': [3, 4, 9, 14, 1, 11, 5, 15], '3': [3, 4, 9, 14, 2, 8],
-    '4': [3, 4, 9, 14, 0, 12, 10, 6]
-}
-#
+    u'华池街-苏州大道东': {
+        '1': [3, 4, 9, 14, 7, 13], '2': [3, 4, 9, 14, 1, 11, 5, 15], '3': [3, 4, 9, 14, 2, 8],
+        '4': [3, 4, 9, 14, 0, 12, 10, 6]}}
+
+
+# set cross_name, date,time into index
 
 flow_data_read['date'] = flow_data_read['curr_time'].apply(lambda x: x.date())
+
+
 date_time = flow_data_read[['date', 'curr_time']].drop_duplicates(['curr_time'])
 date_index = flow_data_read['date'].unique()
 time_index = flow_data_read['curr_time'].unique()
 flow_data = np.zeros(36)
-stage_data = np.zeros((time_index.shape[0]-1, 4))
 
 for cross in range(len(cross_index)):
     cross_flow_data = np.zeros((len(time_index), 36))
@@ -73,15 +76,37 @@ for cross in range(len(cross_index)):
 
 flow_data = flow_data[1:]
 
-for row in range(time_index.shape[0] - 1):
-    time_stage = (stage_data_read.curr_time >= time_index[row]) & (stage_data_read.curr_time < time_index[row+1])
 
-    stage_data[row, 0] = stage_data_read[time_stage & (stage_data_read.stage_no == 1)].value.sum()
-    stage_data[row, 1] = stage_data_read[time_stage & (stage_data_read.stage_no == 2)].value.sum()
-    stage_data[row, 2] = stage_data_read[time_stage & (stage_data_read.stage_no == 3)].value.sum()
-    stage_data[row, 3] = stage_data_read[time_stage & (stage_data_read.stage_no == 4)].value.sum()
+# collect stage data by flowdata's time index
+stage_data_read = pd.read_csv('origin_data/stage_origin_data.csv',
+                              encoding='gb2312', date_parser=date_parser, parse_dates=['STAGE_START_TM'])
+stage_data_read = stage_data_read[['ROAD_NAME', 'STAGE_START_TM', 'STAGE_SN', 'STAGE_SECONDS']]
+stage_data_read.columns = ['cross_name', 'stage_time', 'stage_sn', 'val']
 
-status_data = np.concatenate((flow_data, stage_data), axis=1)
+# encoding
+
+stage_data_read['stage_time'] = pd.cut(stage_data_read['stage_time'], time_index, labels=range(1, len(time_index))).values
+fix_cross_name = dict(zip([u'苏州大道东-观枫街', u'苏州大道东-华池街', u'星湖街-苏州大道东',u'旺墩路-华池街', u'现代大道-华池街', u'现代大道-观枫街'],
+                          [0, 3, 2, 1, 4, 5]))
+
+stage_data_read['cross_name'] = stage_data_read['cross_name'].replace(fix_cross_name)
+
+# collect
+stage_data_read = pd.pivot_table(stage_data_read, index=['cross_name', 'stage_time'], columns=['stage_sn'], values=['val'],
+                            aggfunc=[np.sum], fill_value=0)
+
+# merge
+stage_data = np.zeros(13)
+for cross in range(len(cross_index)):
+    cross_stage_data = np.zeros((len(time_index), 13))
+    cross_stage_data[:, 0] = cross
+    cross_stage_data[:, 1] = np.arange(time_index.shape[0])
+    cross_stage_data[:, 2] = date_time['date'].map(dict(zip(date_index, range(len(date_index)))))
+    cross_stage_data[1:, 3:] = stage_data_read.loc[cross, :]
+    stage_data = np.row_stack((stage_data, cross_stage_data))
+
+stage_data = stage_data[1:]
+
 
 
 def reward(s):
