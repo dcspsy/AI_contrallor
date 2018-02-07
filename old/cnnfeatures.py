@@ -191,8 +191,10 @@ reward_data = reward(flow_data, stage_data)  # reward data
 
 
 def drop_error_data(data):
-    drop_err = (stage_data <= 480).any(axis=1)
-    return data[drop_err]
+    drop_err = (np.abs(action_data) <= 480).all(axis=1)
+    drop_zero = (action_data != 0).any(axis=1)
+    save = drop_err & drop_zero
+    return data[save]
 
 
 drop_error_data(flow_data).dump('./data/flow_data')

@@ -2,8 +2,8 @@ import numpy as np
 from rl import Feature
 
 
-flow_data = np.load('/Users/pansmac/PycharmProjects/AI_contrallor/data/flow_data')
-stage_data = np.load('/Users/pansmac/PycharmProjects/AI_contrallor/data/stage_data')
+flow_data = np.load('data/flow_data')
+stage_data = np.load('data/stage_data')
 
 
 def occupancy(flow, stage):
@@ -59,7 +59,7 @@ def occupancy(flow, stage):
 def reward(flow, stage):
     occ = occupancy(flow, stage)
     occ_drop_turn_right_flow = occ[:, [0, 1, 2, 5, 6, 7, 8, 10, 11, 12, 13, 15]]
-    return np.max(occ_drop_turn_right_flow, axis=1)
+    return - np.max(occ_drop_turn_right_flow, axis=1)
 
 
 class TrafficEnv(object):

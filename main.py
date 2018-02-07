@@ -44,6 +44,7 @@ def learn_history():
     flow_data = np.load('data/flow_data')
     stage_data = np.load('data/stage_data')
     action_data = np.load('data/action_data')
+    action_data = action_data/200.
     reward_data = np.load('data/reward_data')
     for i in range(5000):
         memory.push(torch.Tensor(flow_data[i:i + 1]), torch.Tensor(stage_data[i:i + 1]),
@@ -53,14 +54,18 @@ def learn_history():
                     torch.Tensor(stage_data[i + 1:i + 2]),
                     torch.Tensor(reward_data[i:i + 1]))
 
-    for _ in range(1000):
+    for _ in range(10000):
         transitions = memory.sample(BATCH_SIZE)
         batch = Transition(*zip(*transitions))
         agent.update_parameters(batch)
+        if _ % 100 == 0:
+            print 'loss',agent.value_loss.data
 
 
 learn_history()
 transitions = memory.sample(5)
 batch = Transition(*zip(*transitions))
-print agent.select_action(batch.flow, batch.stage)
 print batch.action
+print agent.select_action(batch.flow,batch.stage)
+
+
